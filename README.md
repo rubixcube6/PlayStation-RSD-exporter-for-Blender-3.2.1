@@ -7,7 +7,7 @@ This works with Blender 3.2.1 and should work with future versions.
 Go to "Edit --> Preferences --> Add-ons" and click the "Install" button. Browse for the "Playstation RSD Exporter.py" file.
 
 # How To Use
-Go to "File --> Export --> RSD (PlayStation) Export" and save your RSD model file wherever you like.
+Make sure to select the object you want to export. Then Go to "File --> Export --> RSD (PlayStation) Export" and save your RSD model file wherever you like.
 
 For textured models you should only use one texture per material. Since the playstation doesn't support complex shader properties all you need is a shader with an image attached to the base color, then just UV map your model like you normally would.
 

@@ -265,20 +265,20 @@ class ExportSomeData(Operator, ExportHelper):
             texY = 0
             textured = False
             texIndex = 0
-            imgs = []
             matIndex = 0
             for m in me.materials:
-                matIndex += 1
                 if m.node_tree:
                     for n in m.node_tree.nodes:
                         if n.type=='TEX_IMAGE' or n.type=='ShaderNodeTexImage':
                             if n.image:
+                                #this material has a texture
                                 texIndex = poly.material_index
-                                if texIndex != matIndex:
+                                if matIndex == texIndex:
+                                    #this material matches this polygon's material index
                                     textured = True
-                                imgs.append(n.image)
-            
-            print("Textured: " + str(textured) + str(imgs) )
+                                    texX = n.image.size[0] - 0.85
+                                    texY = n.image.size[1] - 0.85
+                matIndex += 1
 
             r = 0
             g = 0
@@ -397,9 +397,6 @@ class ExportSomeData(Operator, ExportHelper):
             
             #UVs
             if textured:
-                
-                texX = imgs[texIndex].size[0] - 0.85
-                texY = imgs[texIndex].size[1] - 0.85
 
                 colorMultiplier = 128
                 fileContentMAT += str(texIndex) + " "
@@ -432,7 +429,8 @@ class ExportSomeData(Operator, ExportHelper):
                     fileContentMAT += str(int(texY - (uv_layer[poly.loop_start + 1].uv.y * texY))) + " "
             
             else:
-                print("Not textured so no UVs")
+                # print("Not textured so no UVs")
+                print(" ")
             
             #Vertex Colors
             if hasVertColors:

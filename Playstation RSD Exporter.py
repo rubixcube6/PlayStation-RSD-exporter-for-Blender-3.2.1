@@ -266,13 +266,16 @@ class ExportSomeData(Operator, ExportHelper):
             textured = False
             texIndex = 0
             imgs = []
+            matIndex = 0
             for m in me.materials:
+                matIndex += 1
                 if m.node_tree:
                     for n in m.node_tree.nodes:
                         if n.type=='TEX_IMAGE' or n.type=='ShaderNodeTexImage':
                             if n.image:
-                                textured = True
                                 texIndex = poly.material_index
+                                if texIndex != matIndex:
+                                    textured = True
                                 imgs.append(n.image)
             
             print("Textured: " + str(textured) + str(imgs) )

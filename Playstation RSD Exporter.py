@@ -266,6 +266,8 @@ class ExportSomeData(Operator, ExportHelper):
             textured = False
             texIndex = 0
             matIndex = 0
+            indexInRSD = 0
+            imgFoundIndex = 0
             for m in me.materials:
                 if m.node_tree:
                     for n in m.node_tree.nodes:
@@ -276,8 +278,10 @@ class ExportSomeData(Operator, ExportHelper):
                                 if matIndex == texIndex:
                                     #this material matches this polygon's material index
                                     textured = True
+                                    indexInRSD = imgFoundIndex
                                     texX = n.image.size[0] - 0.85
                                     texY = n.image.size[1] - 0.85
+                                imgFoundIndex += 1
                 matIndex += 1
 
             r = 0
@@ -399,7 +403,7 @@ class ExportSomeData(Operator, ExportHelper):
             if textured:
 
                 colorMultiplier = 128
-                fileContentMAT += str(texIndex) + " "
+                fileContentMAT += str(indexInRSD) + " "
 
                 #Set Texture UVs
                 if len(poly.vertices) == 3:

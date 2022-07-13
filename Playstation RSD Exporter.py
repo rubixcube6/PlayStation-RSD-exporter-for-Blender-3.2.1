@@ -1,4 +1,16 @@
 
+bl_info = {
+    "name": "PlayStation RSD exporter",
+    "author": "MB Games",
+    "version": (1, 0),
+    "blender": (2, 80, 0),
+    "location": "View3D > Add > Mesh > RSD (PlayStation) Export",
+    "description": "Exports your model in PlayStation RSD format",
+    "warning": "",
+    "doc_url": "https://github.com/rubixcube6/PlayStation-RSD-exporter-for-Blender-3.2.1",
+    "category": "Export Plugin",
+}
+
 import bpy
 import mathutils
 import bmesh

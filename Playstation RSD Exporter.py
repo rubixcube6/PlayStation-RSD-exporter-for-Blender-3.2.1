@@ -274,6 +274,8 @@ class ExportSomeData(Operator, ExportHelper):
                                 textured = True
                                 texIndex = poly.material_index
                                 imgs.append(n.image)
+            
+            print("Textured: " + str(textured) + str(imgs) )
 
             r = 0
             g = 0
@@ -382,13 +384,13 @@ class ExportSomeData(Operator, ExportHelper):
                 if hasVertColors:
                     if colorsAreFlat:
                         # Not Textured Flat Color
-                        print("C ")
+                        fileContentMAT += "C "
                     else:
                         # Not Textured Smooth Color
-                        print("G ")
+                        fileContentMAT += "G "
                 else:
                     # Not Textured No Vertex Colors
-                    print("C ")
+                    fileContentMAT += "C 255 255 255"
             
             #UVs
             if textured:

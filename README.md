@@ -13,7 +13,9 @@ For textured models you should only use one texture per material. Since the play
 
 For Smooth and Flat shaded polygons, at the moment auto-smoothing is not supported. In edit mode, select the faces you would like to shade and go to "Face --> Shade Smooth" or "Face --> Shade Flat"
 
-The latest update was a big one! After a lot of stress testing a few bugs were fixed and some new features were added
+# Latest Updates
+v1.1: 
+This update is a big one! After a lot of stress testing a few bugs were fixed and some new features were added
 - All different types and variations of a polygon "Shading (smooth and flat), Lit and unlit, vertex color (smooth and flat), and Textured/not textured" have now been tested working and interacting with each other. 
 - You can now have lighting on vertex colored faces. however, vertex colored faces with a texture will always be unlit.
 - You can now export all of the above types of polygons in one mesh.

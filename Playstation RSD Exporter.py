@@ -1,8 +1,7 @@
-
 bl_info = {
     "name": "PlayStation RSD exporter",
     "author": "MB Games",
-    "version": (1, 0),
+    "version": (1, 1),
     "blender": (2, 80, 0),
     "location": "View3D > Add > Mesh > RSD (PlayStation) Export",
     "description": "Exports your model in PlayStation RSD format",
@@ -12,8 +11,14 @@ bl_info = {
 }
 
 import bpy
+import textwrap
 import mathutils
-import bmesh
+
+# ExportHelper is a helper class, defines filename and
+# invoke() function which calls the file selector.
+from bpy_extras.io_utils import ExportHelper
+from bpy.props import StringProperty, BoolProperty, EnumProperty, FloatProperty, IntProperty
+from bpy.types import Operator
 
 ply_filepath = ""
 mat_filepath = ""
@@ -57,9 +62,6 @@ def mesh_triangulate(me):
     bpy.ops.mesh.tris_convert_to_quads()
     bpy.ops.object.editmode_toggle()
 
-
-    
-
 def write_some_data(filepath, data):
     print("Writing data...")
     f = open(filepath, 'w', encoding='utf-8')
@@ -68,12 +70,12 @@ def write_some_data(filepath, data):
 
     return {'FINISHED'}
 
-
-# ExportHelper is a helper class, defines filename and
-# invoke() function which calls the file selector.
-from bpy_extras.io_utils import ExportHelper
-from bpy.props import StringProperty, BoolProperty, EnumProperty
-from bpy.types import Operator
+def _label_multiline(context, text, parent, charWidth):
+    chars = int(context.region.width / charWidth)   # 7 pix on 1 character
+    wrapper = textwrap.TextWrapper(width=chars)
+    text_lines = wrapper.wrap(text=text)
+    for text_line in text_lines:
+        parent.label(text=text_line)
 
 
 class ExportSomeData(Operator, ExportHelper):
@@ -89,6 +91,58 @@ class ExportSomeData(Operator, ExportHelper):
         options={'HIDDEN'},
         maxlen=255,  # Max internal buffer length, longer would be clamped.
     )
+
+    # ------------------------------------------
+    #------         UI Stuff Here         ------
+    # ------------------------------------------
+
+    forceUnlit: BoolProperty(
+        name="Force Unlit",
+        description="The entire mesh will be exported as unlit. Otherwise it will be automatically decided on a per polygon basis.",
+        default = False
+    )
+
+    def draw(self, context):
+        layout = self.layout
+        scene = context.scene
+
+        layout.row()
+
+        layout.label(text=" ")
+        layout.label(text="Hover over an option to see it's description.")
+        layout.prop(self, "forceUnlit")
+
+    #This doesn't work yet...
+    # ignoreVertCol: EnumProperty(
+    #     name="",
+    #     description="Polygons without vertex colors can be shaded with a light source. This is a fix for models that have both colored and non-colored polygons so that the non-colored polygons can still have shading.",
+    #     items=(
+    #         ('white', "Ignore White", "White RGB (255, 255, 255)"),
+    #         ('black', "Ignore Black", "Black RGB (0, 0, 0)"),
+    #     ),
+    #     default='white',
+    # )
+
+    # def draw(self, context):
+    #     layout = self.layout
+
+    #     scene = context.scene
+
+    #     layout.row()
+
+    #     _label_multiline(
+    #         context,
+    #         "A fix for models with vertex colors and un-colored polygons. polygons of this flat color will be shaded with a light source",
+    #         layout,
+    #         14
+    #     )
+
+    #     layout.label(text="Ignore Vertex Color:")
+    #     layout.prop(self, "ignoreVertCol")
+
+    # ------------------------------------------
+
+
 
     # List of operator properties, the attributes will be assigned
     # to the class instance from the operator settings before calling.
@@ -245,7 +299,7 @@ class ExportSomeData(Operator, ExportHelper):
         if me.attributes:
             for atr in me.attributes:
                 if atr.name == "Col":
-                    hasVertColors = True
+                    #---------- hasVertColors = True ----------------
                     for d in atr.data:
                         tempCol = mathutils.Color((d.color[0], d.color[1], d.color[2]))
                         vertColors.append(tempCol)
@@ -259,7 +313,9 @@ class ExportSomeData(Operator, ExportHelper):
         i = 0
         for poly in me.polygons:
             
+            colorMultiplier = 255
             unlit = 0
+            dontCalculateUnlit = False
             
             texX = 0
             texY = 0
@@ -282,7 +338,82 @@ class ExportSomeData(Operator, ExportHelper):
                                     texX = n.image.size[0] - 0.85
                                     texY = n.image.size[1] - 0.85
                                 imgFoundIndex += 1
+                        if n.type=='EMISSION':
+                            print("emission shader found")
+                            if matIndex == poly.material_index:
+                                dontCalculateUnlit = True
                 matIndex += 1
+
+            r = 0
+            g = 0
+            b = 0
+            r1 = 0
+            g1 = 0
+            b1 = 0
+            r2 = 0
+            g2 = 0
+            b2 = 0
+            r3 = 0
+            g3 = 0
+            b3 = 0
+            
+            #when a mesh with no vertex color is combined with a mesh that has vertex color,
+            #all the vertices that didn't have color get colored solid white.
+            if len(vertColors) > 0:
+                # this mesh contains vertex color
+                hasVertColors = True
+                #However we need to check to see if this poly is flat shaded and white
+                if len(poly.vertices) == 3:
+                    r = vertColors[poly.loop_start].r
+                    g = vertColors[poly.loop_start].g
+                    b = vertColors[poly.loop_start].b
+                    r1 = vertColors[poly.loop_start + 2].r
+                    g1 = vertColors[poly.loop_start + 2].g
+                    b1 = vertColors[poly.loop_start + 2].b
+                    r2 = vertColors[poly.loop_start + 1].r
+                    g2 = vertColors[poly.loop_start + 1].g
+                    b2 = vertColors[poly.loop_start + 1].b
+                    if r == r1 and r1 == r2 and r2 == r1:
+                        if g == g1 and g1 == g2 and g2 == g1:
+                            if b == b1 and b1 == b2 and b2 == b1:
+                                #flat colored tri
+                                if r == 1 and g == 1 and b == 1:
+                                    # solid white
+                                    hasVertColors = False
+                if len(poly.vertices) == 4:
+                    r = vertColors[poly.loop_start + 3].r
+                    g = vertColors[poly.loop_start + 3].g
+                    b = vertColors[poly.loop_start + 3].b
+                    r1 = vertColors[poly.loop_start + 2].r
+                    g1 = vertColors[poly.loop_start + 2].g
+                    b1 = vertColors[poly.loop_start + 2].b
+                    r2 = vertColors[poly.loop_start].r
+                    g2 = vertColors[poly.loop_start].g
+                    b2 = vertColors[poly.loop_start].b
+                    r3 = vertColors[poly.loop_start + 1].r
+                    g3 = vertColors[poly.loop_start + 1].g
+                    b3 = vertColors[poly.loop_start + 1].b
+                    if r == r1 and r1 == r2 and r2 == r3 and r3 == r:
+                        if g == g1 and g1 == g2 and g2 == g3 and g3 == g:
+                            if b == b1 and b1 == b2 and b2 == b3 and b3 == b:
+                                #flat colored quad
+                                if r == 1 and g == 1 and b == 1:
+                                    # solid white
+                                    hasVertColors = False
+            else:
+                
+                hasVertColors = False
+
+            #Conditions
+            if textured:
+                if hasVertColors:
+                    colorMultiplier = 128
+                    unlit = 1
+                else:
+                    #enable lighting
+                    unlit = 0
+            else:
+                unlit = 0
 
             r = 0
             g = 0
@@ -301,7 +432,6 @@ class ExportSomeData(Operator, ExportHelper):
             b3 = 0
 
             #check if this polygon has smooth colored vertices
-            colorMultiplier = 255
             colorsAreFlat = False
             if hasVertColors:
                 if len(poly.vertices) == 3:
@@ -348,33 +478,18 @@ class ExportSomeData(Operator, ExportHelper):
                                 #Flat colored Quad
                                 colorsAreFlat = True
             
-            #Conditions
-            if textured:
-                if hasVertColors:
-                    # Disable lighting so we can set our own colors
-                    unlit = 1
-                else:
-                    #enable lighting
-                    unlit = 0
-            else:
-                if hasVertColors:
-                    unlit = 1
-                else:
-                    unlit = 0
-            
+            if self.forceUnlit or dontCalculateUnlit:
+                unlit = 1
+                
             fileContentMAT += str(i) + "    " + materialFlag("000", 0, 0, unlit) + " "
 
             if poly.use_smooth:
                 fileContentMAT += "G "
             else:
                 fileContentMAT += "F "
-
-            colorMultiplier = 255
             
             #Conditions
             if textured:
-
-                colorMultiplier = 128
 
                 if hasVertColors:
                     if colorsAreFlat:
@@ -402,7 +517,6 @@ class ExportSomeData(Operator, ExportHelper):
             #UVs
             if textured:
 
-                colorMultiplier = 128
                 fileContentMAT += str(indexInRSD) + " "
 
                 #Set Texture UVs
@@ -434,7 +548,7 @@ class ExportSomeData(Operator, ExportHelper):
             
             else:
                 # print("Not textured so no UVs")
-                print(" ")
+                pass
             
             #Vertex Colors
             if hasVertColors:
@@ -485,7 +599,8 @@ class ExportSomeData(Operator, ExportHelper):
                         fileContentMAT += str( int(vertColors[poly.loop_start + 1].g * colorMultiplier) ) + " "
                         fileContentMAT += str( int(vertColors[poly.loop_start + 1].b * colorMultiplier) ) + " "
             elif textured == False:
-                print("Not textured or colored")
+                #This polygon is not textured or colored
+                pass
             else:
                 #Not colored so make it solid white
                 fileContentMAT += "255 255 255"
@@ -515,9 +630,9 @@ class ExportSomeData(Operator, ExportHelper):
         
         # print("=================================================================================")        
         # print(fileContentPLY)
-        print("=================================================================================")
-        print(fileContentMAT)
-        print("=================================================================================")
+        # print("=================================================================================")
+        # print(fileContentMAT)
+        # print("=================================================================================")
         # print(fileContentRSD)
         # print("=================================================================================")
         

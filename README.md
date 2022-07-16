@@ -1,4 +1,6 @@
-# PlayStation RSD exporter for Blender 3.2.1+
+# PlayStation RSD exporter for Blender 3.2.1+!
+[Example Project](https://user-images.githubusercontent.com/11562971/179373557-aca8542b-cd5b-4830-81e7-608cf237dae6.png)
+
 This plugin will export your model in the RSD model format for use with the PSX PsyQ SDK. It supports exporting lit and unlit polygons, smooth and flat shaded polygons, Textured polygons, and vertex colors.
 
 This works with Blender 3.2.1 and should work with future versions.
